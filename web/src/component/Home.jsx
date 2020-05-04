@@ -12,7 +12,7 @@ class Home extends React.Component {
     constructor() {
         super()
         this.state = {
-            value: "b",
+            value: "a",
             visible: false,
             iconLoading: false,
             data: '',
@@ -195,7 +195,6 @@ class Home extends React.Component {
                 <Content>
                     {value == "a" ? <Index userId={userId} /> : <Mine userId={userId} />}
                 </Content>
-                <Footer>拾物拾物招领系统</Footer>
             </Layout>
             <Modal
                 title={checkInterface?"登录":"注册"}
