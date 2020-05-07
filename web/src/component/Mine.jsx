@@ -1,6 +1,6 @@
 import React from 'react'
 import { IndexItem } from './Index'
-import { Menu, Upload, message, Button, Form, Radio,Input } from 'antd'
+import { Menu, Upload, message, Button, Form, Radio, Input,Empty } from 'antd'
 import axios from 'axios'
 import './Mine.less'
 
@@ -23,42 +23,33 @@ function beforeUpload(file) {
 }
 
 class MyRelease extends React.Component {
-  constructor(){
+  constructor() {
     super()
-    this.state={
-      data:[]
+    this.state = {
+      data: []
     }
   }
   componentDidMount() {
     this.fetch()
   }
   fetch = () => {
-    // let { userId } = this.props;
-    // console.log(userId)
-    // axios({
-    //   method: 'get',
-    //   headers: { 'Content-type': 'application/json' },
-    //   url: 'http://localhost:3000/get/getPersonalReleaseInfo',
-    //   params: { userId }
-    // }).then(res => {
-      let res=[{
-        time:1588140460169,
-        picture:"/static/media/avatar_01.9bf849f7.jpg",
-        nickname:"冷漠无情失智君",
-        urgent:true,
-        releaseType:1,
-        otherRemarks:"本人不慎在三区操场遗失了身份证，请捡到了小可爱联系我一下",
-        img:[
-          "https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=1141259048,554497535&fm=26&gp=0.jpg"
-        ]
-      }]
-      this.setState({data:res||{}})
-    // })
+    let { userId } = this.props;
+    axios({
+      method: 'get',
+      headers: { 'Content-type': 'application/json' },
+      url: 'http://localhost:3000/get/getPersonalReleaseInfo',
+      params: { userId }
+    }).then(res => {
+      this.setState({ data: res.data || {} })
+    })
   }
   render() {
     let { data } = this.state;
     console.log(data)
-    return data.map((it,idx)=><IndexItem data={it} key={idx}/>)
+    return <div style={{ width: "100%" }}>
+      {data.length > 0 ? data.map((it, idx) => <IndexItem data={it} key={idx} fetch={this.fetch} />) :
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
+    </div>
   }
 }
 class AlterPersonalInfo extends React.Component {
@@ -102,7 +93,7 @@ class AlterPersonalInfo extends React.Component {
     const rangeConfig = {
       rules: [{ type: 'array', required: true, message: 'Please select time!' }],
     }
-    const { imageUrl="/static/media/avatar_01.9bf849f7.jpg" } = this.state;
+    const { imageUrl = "/static/media/avatar_01.9bf849f7.jpg" } = this.state;
     return <div className="alter-personal-info">
       <Form name="time_related_controls"
         {...formItemLayout}
@@ -174,7 +165,7 @@ class Mine extends React.Component {
     let { userId } = this.props;
     return <div className="mine">
       <div className="personal-info">
-        <div style={{borderRight:"1px solid #f9f9f9"}}>
+        <div style={{ borderRight: "1px solid #f9f9f9" }}>
           <div className="info">
             <img src={require('../images/avatar_01.jpg')} alt="" />
             <div style={{ marginLeft: 16 }}>

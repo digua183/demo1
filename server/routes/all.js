@@ -52,22 +52,16 @@ router.post('/upload', function (req, res, next) {
     const sqlarr = [userId, type, place, time, otherRemarks, contactMethod, releaseType, urgent]
     const sql = 'insert into releaseinfo (userId, type, place, time, otherRemarks, contactMethod, releaseType,urgent) values(?,?,?,?,?,?,?,?)';
     db.dbConnect(sql, sqlarr, function (err, data) {
-      if (err) {
-        res.send("error")
-      }
     })
+    console.log(fileList)
     fileList.forEach(it => {
       let { uid, status, name, thumbUrl: url } = it;
       let arr = [userId, uid, status, name, url,time]
       let sqls = 'insert into picture (userId,uid,status,name,url,time) values(?,?,?,?,?,?)'
       db.dbConnect(sqls, arr, function (err, data) {
-        if (err) {
-          res.send("error")
-        } else {
-          res.send("success")
-        }
       })
     })
+    res.send('success')
   } else {
     res.send("error")
   }
