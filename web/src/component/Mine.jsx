@@ -1,7 +1,8 @@
 import React from 'react'
 import { IndexItem } from './Index'
-import { Menu, Upload, message, Button, Form, Radio, Input,Empty } from 'antd'
+import { Menu, Upload, message, Button, Form, Radio, Input, Empty,Avatar } from 'antd'
 import axios from 'axios'
+import { UserOutlined } from '@ant-design/icons';
 import './Mine.less'
 
 function getBase64(img, callback) {
@@ -47,7 +48,7 @@ class MyRelease extends React.Component {
     let { data } = this.state;
     console.log(data)
     return <div style={{ width: "100%" }}>
-      {data.length > 0 ? data.map((it, idx) => <IndexItem data={it} key={idx} fetch={this.fetch} />) :
+      {data.length > 0 ? data.map((it, idx) => <IndexItem data={it} key={idx} fetch={this.fetch} isPersonal={true} />) :
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
     </div>
   }
@@ -87,12 +88,7 @@ class AlterPersonalInfo extends React.Component {
         sm: { span: 19 },
       },
     }
-    const config = {
-      rules: [{ type: 'object', required: true, message: 'Please select time!' }],
-    }
-    const rangeConfig = {
-      rules: [{ type: 'array', required: true, message: 'Please select time!' }],
-    }
+    let personalInfo = JSON.parse(window.localStorage.getItem("personalInfo"))
     const { imageUrl = "/static/media/avatar_01.9bf849f7.jpg" } = this.state;
     return <div className="alter-personal-info">
       <Form name="time_related_controls"
@@ -163,14 +159,16 @@ class Mine extends React.Component {
   render() {
     let { openKeys } = this.state;
     let { userId } = this.props;
+    let personalInfo = JSON.parse(window.localStorage.getItem("personalInfo"))
+    let { nickname, jurisdiction,pic } = personalInfo
     return <div className="mine">
       <div className="personal-info">
         <div style={{ borderRight: "1px solid #f9f9f9" }}>
           <div className="info">
-            <img src={require('../images/avatar_01.jpg')} alt="" />
+            {pic ?<img src={pic} alt="" /> : <Avatar icon={<UserOutlined />} />}
             <div style={{ marginLeft: 16 }}>
-              <p>冷漠无情失智君</p>
-              <span>管理员</span>
+              <p>{nickname || ""}</p>
+              <span>{jurisdiction==1?"管理员":"普通用户"}</span>
             </div>
           </div>
           <Menu openKeys={openKeys} style={{ width: 240 }} defaultSelectedKeys="a" onClick={this.handleClick}>

@@ -5,6 +5,7 @@ import { Index } from './Index'
 import Mine from './Mine'
 import './Home.less'
 import axios from 'axios'
+import moment from 'moment'
 
 const { Header, Footer, Content } = Layout;
 
@@ -16,12 +17,15 @@ class Home extends React.Component {
             visible: false,
             iconLoading: false,
             data: '',
-            checkInterface: true
+            checkInterface: true,
+            registerData: {},
+            randnum: undefined,
+            time: undefined,
+            displayTime: false,
+            countDown: 60,
+            registerSuccess: false
         }
     }
-    onFinishFailed = errorInfo => {
-        console.log('Failed:', errorInfo);
-    };
     onFinish = values => {
         this.setState({ iconLoading: true })
         axios({
@@ -30,24 +34,73 @@ class Home extends React.Component {
             url: 'http://localhost:3000/all/login',
             data: values
         }).then(({ data }) => {
-            if (data.status == "success") {
-                let storage = window.localStorage;
-                storage.setItem("userId", data.data.userId)
-                storage.setItem("nickname", data.data.nickname)
-                storage.setItem("pic", data.data.pic)
-                message.success("登录成功！")
-                this.setState({ visible: false, iconLoading: false, data: data.data || '' })
-            } else {
-                message.error("用户不存在或者密码错误！")
-                this.setState({ iconLoading: false })
-            }
-        })
-            .catch(function (error) {
-                message.info("服务器错误！")
-            });
+            let storage = window.localStorage;
+            storage.setItem("personalInfo", JSON.stringify(data))
+            message.success("登录成功！")
+            this.setState({ visible: false, iconLoading: false, data: data || '' })
+        }).catch(function (error) {
+            message.info("服务器错误！")
+        });
 
     };
+    onFormLayoutChange = (_, b) => {
+        this.setState({ registerData: b })
+    }
+    getVerificationCode = () => {
+        let { registerData: { userId }, registerSuccess } = this.state;
+        this.setState({ displayTime: true }, () => {
+            let { countDown } = this.state;
+            let abc = setInterval(() => {
+                if (countDown > 0 && !registerSuccess) {
+                    countDown--
+                    this.setState({ countDown })
+                } else {
+                    this.setState({ displayTime: false, countDown: 60 }, () => {
+                        clearInterval(abc)
+                    })
+                }
+            }, 1000)
+        })
+
+        axios({
+            method: 'get',
+            headers: { 'Content-type': 'application/json' },
+            url: 'http://localhost:3000/get/getverificationCode',
+            params: { userId }
+        }).then(({ data }) => {
+            this.setState({ randnum: data.randnum, time: moment() })
+            message.info("获取成功！")
+        }).catch(function (error) {
+            message.info("服务器错误！")
+        });
+    }
+    registerNow = () => {
+        let { registerData, time, randnum } = this.state;
+        let { verificationCode } = registerData
+        if (!time || !randnum) {
+            message.error("验证码失效或者不正确，请重新获取")
+            return
+
+        }
+        if (moment().diff(time, 'seconds') > 60 || verificationCode != randnum) {
+            message.error("验证码失效或者不正确，请重新获取")
+            return
+        }
+        axios({
+            method: 'post',
+            headers: { 'Content-type': 'application/json' },
+            url: 'http://localhost:3000/get/registerNow',
+            data: registerData
+        }).then((res) => {
+            this.setState({ checkInterface: true, registerSuccess: true }, () => {
+                message.info("注册成功！")
+            })
+        }).catch(function (error) {
+            message.info("注册失败！")
+        });
+    }
     registerInterface = () => {
+        let { iconLoading, displayTime, countDown } = this.state;
         let layout = {
             labelCol: { span: 5 },
             wrapperCol: { span: 16 },
@@ -56,69 +109,59 @@ class Home extends React.Component {
             wrapperCol: { offset: 5, span: 16 },
         };
         return <Form
-        {...layout}
-        name="basic"
-        initialValues={{ remember: true }}
-        onFinish={this.onFinish}
-        onFinishFailed={this.onFinishFailed}
-    >
-        <Form.Item
-            label="用 户 名："
-            name="username"
-            rules={[{ required: true, message: '请输入用户名！' }]}
+            {...layout}
+            name="basic"
+            initialValues={{ remember: true }}
+            initialValues={{}}
+            onValuesChange={this.onFormLayoutChange}
         >
-            <Input />
-        </Form.Item>
-        
-        <Form.Item
-            label="设置密码："
-            name="password"
-            rules={[{ required: true, message: '请输入你的密码！' }]}
-        >
-            <Input.Password />
-        </Form.Item>
-        <Form.Item
-            label="确认密码："
-            name="surePassword"
-            rules={[{ required: true, message: '请输入你的密码！' }]}
-        >
-            <Input.Password />
-        </Form.Item>
-        <Form.Item
-            label="手    机："
-            name="surePassword"
-            rules={[{ required: true, message: '请输入你的密码！' }]}
-        >
-            <Input />
-        </Form.Item>
-        <Form.Item
-            label="邮    箱："
-            name="surePassword"
-            rules={[{ required: true, message: '请输入你的密码！' }]}
-        >
-            <Input />
-        </Form.Item>
-        <Form.Item
-            label="验 证 码："
-            name="surePassword"
-            rules={[{ required: true, message: '请输入你的密码！' }]}
-        >
-            <Input />
-        </Form.Item>
-        <Form.Item {...tailLayout}>
-            <Button
-                type="primary"
-                htmlType="submit"
-                style={{ width: "100%" }}
-                // loading={iconLoading}
+
+            <Form.Item
+                label="手    机："
+                name="userId"
+                rules={[{ required: true, message: '请输入手机号！' }]}
             >
-                立即注册
+                <Input />
+            </Form.Item>
+            <Form.Item
+                label="设置密码："
+                name="password"
+                rules={[{ required: true, message: '请输入你的密码！' }]}
+            >
+                <Input.Password />
+            </Form.Item>
+            <Form.Item
+                label="确认密码："
+                name="surePassword"
+                rules={[{ required: true, message: '请输入你的密码！' }]}
+            >
+                <Input.Password />
+            </Form.Item>
+            <Form.Item
+                label="验 证 码："
+                name="verificationCode"
+                rules={[{ required: true, message: '请输入验证码！' }]}
+            >
+                {displayTime ? <Input suffix={<Button type="primary" size="small">{countDown}</Button>} /> :
+                    <Input suffix={<Button type="primary" size="small" onClick={this.getVerificationCode}>获取验证码</Button>} />}
+
+            </Form.Item>
+
+            <Form.Item {...tailLayout}>
+                <Button
+                    type="primary"
+                    htmlType="submit"
+                    onClick={this.registerNow}
+                    style={{ width: "100%" }}
+                    loading={iconLoading}
+                >
+                    立即注册
             </Button>
-        </Form.Item>
-        <Form.Item  {...tailLayout} style={{ textAlign: "right" }}>
-            <Button type="link" onClick={()=>this.setState({checkInterface:true})}>登录</Button>
-        </Form.Item>
-    </Form>
+            </Form.Item>
+            <Form.Item  {...tailLayout} style={{ textAlign: "right" }}>
+                <Button type="link" onClick={() => this.setState({ checkInterface: true })}>登录</Button>
+            </Form.Item>
+        </Form>
     }
     Demo = () => {
         let { iconLoading, checkInterface } = this.state;
@@ -137,9 +180,9 @@ class Home extends React.Component {
             onFinishFailed={this.onFinishFailed}
         >
             <Form.Item
-                label="用户名："
+                label="手机号码："
                 name="username"
-                rules={[{ required: true, message: '请输入你的用户名！' }]}
+                rules={[{ required: true, message: '请输入你的手机号码！' }]}
             >
                 <Input />
             </Form.Item>
@@ -162,21 +205,18 @@ class Home extends React.Component {
                 </Button>
             </Form.Item>
             <Form.Item  {...tailLayout} style={{ textAlign: "right" }}>
-                <Button type="link" onClick={()=>this.setState({checkInterface:false})}>注册</Button>
+                <Button type="link" onClick={() => this.setState({ checkInterface: false })}>注册</Button>
             </Form.Item>
         </Form>) : this.registerInterface()}</React.Fragment>
 
     };
     handleChange = ({ target: { value } }) => {
-        console.log('click ', value);
         this.setState({ value })
     };
     render() {
-        let storages = window.localStorage
-        const userId = storages.getItem("userId") || ""
-        const nickname = storages.getItem("nickname") || ""
-        const pic = storages.getItem("pic") || ""
-        let { value, visible,checkInterface } = this.state;
+        let personalInfo = JSON.parse(window.localStorage.getItem("personalInfo"))
+        let { userId, nickname, pic } = personalInfo
+        let { value, visible, checkInterface } = this.state;
         return <div className="Home">
             <Layout>
                 <Header>
@@ -197,7 +237,7 @@ class Home extends React.Component {
                 </Content>
             </Layout>
             <Modal
-                title={checkInterface?"登录":"注册"}
+                title={checkInterface ? "登录" : "注册"}
                 visible={visible}
                 footer={null}
                 maskClosable={false}

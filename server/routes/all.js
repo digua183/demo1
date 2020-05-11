@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 var db = require('../utils/db.js');
 
+
+
 // 点击
 router.post('/login', function (req, res, next) {
   let name = req.body.username
@@ -12,15 +14,7 @@ router.post('/login', function (req, res, next) {
   db.dbConnect(sql, sqlarr, function (err, data) {
     if (data.length > 0) {
       req.session.username = name;
-      res.send({
-        status: "success",
-        data: {
-          userId: data[0].userId,
-          nickname: data[0].nickname,
-          pic: data[0].picture
-        },
-
-      })
+      res.send(data[0])
     } else {
       res.send({ status: "error" })
     }

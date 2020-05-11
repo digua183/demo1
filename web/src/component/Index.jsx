@@ -14,8 +14,11 @@ import moment from 'moment';
 import axios from 'axios';
 
 
-function IndexItem({ data, fetch, ...props }) {
+function IndexItem({ data, fetch,isPersonal=false, ...props }) {
     let { userId, time, picture, nickname, urgent, releaseType, otherRemarks, img } = data;
+    let personalInfo=JSON.parse(window.localStorage.getItem("personalInfo"))
+    let { jurisdiction } = personalInfo
+    let isAdmin = jurisdiction == 1 
     const [visible, setVisible] = useState(false)
     let editReleaseContent = () => {
         setVisible(true)
@@ -28,9 +31,8 @@ function IndexItem({ data, fetch, ...props }) {
             method: 'get',
             headers: { 'Content-type': 'application/json' },
             url: 'http://localhost:3000/get/deleteData',
-            params: { userId, time }
+            params: { userId, time:Date.parse(moment()) }
         }).then(res => {
-            console.log(res)
             fetch && fetch()
         })
     }
@@ -52,7 +54,7 @@ function IndexItem({ data, fetch, ...props }) {
                 {img ? img.map(item => <img key={item.name} src={item.url} alt="此图片无法显示" />) : null}
             </div>
         </div>
-        {true || true ? <div className="operation-data">
+        {isAdmin || isPersonal ? <div className="operation-data">
             <EditOutlined onClick={editReleaseContent} />
             <Popconfirm
                 title="您确定要删除它吗?"
@@ -137,7 +139,7 @@ class Index extends React.Component {
                         <Radio.Button value="b">失物招领</Radio.Button>
                     </Radio.Group></div>
                 {data.length > 0 ? data.map((it, idx) => {
-                    return <IndexItem data={it} key={idx} fetch={this.fetch} />
+                    return <IndexItem data={it} key={idx} fetch={this.fetch} isPersonal={false} />
                 }) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
             </div>
             <div className="right-part">
