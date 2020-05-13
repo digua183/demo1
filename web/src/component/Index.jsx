@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import {
-    Radio,
     Button,
     message,
     Tag,
     Empty,
-    Popconfirm
+    Popconfirm,
+    DatePicker,
+    Input
 } from 'antd'
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import './Index.less'
@@ -13,12 +14,13 @@ import { ReleaseModal } from './ReleaseModal'
 import moment from 'moment';
 import axios from 'axios';
 
+const RELEASETYPE = { "失物招领": 1, "拾物招领": 2, "全部": 3 }
 
-function IndexItem({ data, fetch,isPersonal=false, ...props }) {
+
+function IndexItem({ data, fetch, userInfo, isPersonal = false, ...props }) {
     let { userId, time, picture, nickname, urgent, releaseType, otherRemarks, img } = data;
-    let personalInfo=JSON.parse(window.localStorage.getItem("personalInfo"))
-    let { jurisdiction } = personalInfo
-    let isAdmin = jurisdiction == 1 
+    let { jurisdiction } = userInfo
+    let isAdmin = jurisdiction == 1
     const [visible, setVisible] = useState(false)
     let editReleaseContent = () => {
         setVisible(true)
@@ -31,7 +33,7 @@ function IndexItem({ data, fetch,isPersonal=false, ...props }) {
             method: 'get',
             headers: { 'Content-type': 'application/json' },
             url: 'http://localhost:3000/get/deleteData',
-            params: { userId, time:Date.parse(moment()) }
+            params: { userId, time: Date.parse(moment()) }
         }).then(res => {
             fetch && fetch()
         })
@@ -65,7 +67,16 @@ function IndexItem({ data, fetch,isPersonal=false, ...props }) {
                 <DeleteOutlined />
             </Popconfirm>
         </div> : null}
-        {visible ? <ReleaseModal data={data} visible={visible} againRelease={true} displayVisible={displayVisible}/> : null}
+        {visible ? <ReleaseModal data={data} visible={visible} againRelease={true} displayVisible={displayVisible} /> : null}
+    </div>
+}
+
+const FilterButton = ({ selectType, changeType, ...props }) => {
+    const changeSelect = (it) => {
+        changeType && changeType(it)
+    }
+    return <div className="select">
+        {['全部', '失物招领', '拾物招领'].map(it => <Button onClick={() => changeSelect(it)} className={it == selectType ? 'select-type' : ""} size="small" key={it}>{it}</Button>)}
     </div>
 }
 
@@ -76,7 +87,10 @@ class Index extends React.Component {
             visible: false,
             confirmLoading: false,
             releaseType: "失物",
-            data: []
+            data: [],
+            selectType: '全部',
+            time: '',
+            place: ''
         }
     }
     componentDidMount() {
@@ -89,8 +103,8 @@ class Index extends React.Component {
             url: 'http://localhost:3000/all/getReleaseData',
         }).then((res) => {
             let data = res.data || []
-            data = data.sort((a,b)=>{
-              return Number(b.time) - Number(a.time)
+            data = data.sort((a, b) => {
+                return Number(b.time) - Number(a.time)
             })
             this.setState({ data: data || [] })
         }).catch(() => {
@@ -127,23 +141,44 @@ class Index extends React.Component {
     displayVisible = () => {
         this.setState({ visible: false })
     }
+    changeType = (it) => {
+        this.setState({ selectType: it }, this.handleFilter)
+    }
+    handleFilter = () => {
+        let { selectType, time, place, data } = this.state;
+        console.log(selectType, time, place, data)
+        data = data.filter(it => {
+            if (selectType == "全部") {
+                return it
+            } else if (it.releaseType == RELEASETYPE[selectType]) {
+                return it
+            }
+        })
+        this.setState({ data })
+    }
     render() {
-        let { visible, confirmLoading, data } = this.state;
-        console.log(data)
+        let { visible, confirmLoading, data, selectType } = this.state;
+        let { userInfo } = this.props;
         return <div className="index">
             <div className="pick-up-item">
-                <div className="radio-switch">
-                    <Button type="primary" style={{ marginRight: 20 }} onClick={() => { this.setState({ visible: true }) }}>发布招领</Button>
-                    <Radio.Group defaultValue="a" buttonStyle="solid">
-                        <Radio.Button value="a">拾物招领</Radio.Button>
-                        <Radio.Button value="b">失物招领</Radio.Button>
-                    </Radio.Group></div>
                 {data.length > 0 ? data.map((it, idx) => {
-                    return <IndexItem data={it} key={idx} fetch={this.fetch} isPersonal={false} />
+                    return <IndexItem userInfo={userInfo} data={it} key={idx} fetch={this.fetch} isPersonal={false} />
                 }) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
             </div>
             <div className="right-part">
-
+                <div className="radio-switch">
+                    <div className="line">发布：</div>
+                    <Button size="small" type="primary" style={{ marginRight: 20 }} onClick={() => { this.setState({ visible: true }) }}>发布招领</Button>
+                </div>
+                <div className="radio-switch">
+                    <div className="line">筛选：</div>
+                    <FilterButton selectType={selectType} changeType={this.changeType} />
+                    <DatePicker placeholder="请选择筛选日期" showTime onOk={(value) => this.setState({ time: value }, this.handleFilter)} />
+                    <Input placeholder="请填写筛选地点" onChange={({ target: { value } }) => this.setState({ place: value })} onPressEnter={this.handleFilter} />
+                    <div>
+                        <Button onClick={this.handleFilter} type="primary" size="small" style={{ marginTop: 10, width: 100 }}>搜索</Button>
+                    </div>
+                </div>
             </div>
             {visible ? <ReleaseModal visible={visible} data={{}} confirmLoading={confirmLoading} displayVisible={this.displayVisible} submitRelease={this.submitRelease} /> : null}
         </div>

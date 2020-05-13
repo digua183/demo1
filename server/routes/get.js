@@ -19,6 +19,12 @@ router.get('/getverificationCode', function (req, res, nex) {
         res.send({ randnum })
     })
 })
+router.post('/alterPersonalInfo',function(req,res,next){
+    let { userId,nickname,picture,remarks,sex } = req.body
+    db.dbConnect('update user set userId = ? , nickname = ? ,picture =? ,remarks = ?,sex = ? where userId = ?',[userId,nickname,picture,remarks,sex,userId],function(err,data){
+        res.send(data)
+    })
+})
 router.post('/registerNow', function (req, res, next) {
     let registerData = req.body
     let { userId, password, surePassword } = registerData

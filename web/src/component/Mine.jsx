@@ -1,8 +1,9 @@
 import React from 'react'
 import { IndexItem } from './Index'
-import { Menu, Upload, message, Button, Form, Radio, Input, Empty,Avatar } from 'antd'
+import { Menu, Upload, message, Button, Form, Radio, Input, Empty, Avatar } from 'antd'
 import axios from 'axios'
-import { UserOutlined } from '@ant-design/icons';
+import { UserOutlined, LoadingOutlined, PlusOutlined } from '@ant-design/icons';
+import { HomeContext } from './HomeContext'
 import './Mine.less'
 
 function getBase64(img, callback) {
@@ -54,10 +55,21 @@ class MyRelease extends React.Component {
   }
 }
 class AlterPersonalInfo extends React.Component {
-  constructor() {
-    super()
-    this.state = {}
+  static contextType = HomeContext;
+  constructor(props) {
+    super(props)
+    let { jurisdiction, nickname, password, picture, userId, sex, remarks } = props.userInfo || {}
+    this.state = {
+      nickname,
+      picture,
+      userId,
+      sex,
+      remarks,
+      loading: false,
+      password
+    }
   }
+
   handleChange = info => {
     if (info.file.status === 'uploading') {
       this.setState({ loading: true });
@@ -67,17 +79,49 @@ class AlterPersonalInfo extends React.Component {
       // Get this url from response in real world.
       getBase64(info.file.originFileObj, imageUrl =>
         this.setState({
-          imageUrl,
+          picture: imageUrl,
           loading: false,
         }),
       );
     }
   }
+  fetch = () => {
+    let { userId } = this.state;
+    axios({
+      method: 'get',
+      headers: { 'Content-type': 'application/json' },
+      url: 'http://localhost:3000/all/getPersonalInfo',
+      params: { userId }
+    }).then(({ data }) => {
+      console.log(data)
+      let storage = window.localStorage;
+      storage.setItem("personalInfo", JSON.stringify(data))
+    }).catch(function (error) {
+      message.info("服务器错误！")
+    });
+  }
   onFinish = fieldsValue => {
-    // Should format date value before submit.
-    console.log(fieldsValue)
+    let { picture, userId, password } = this.state;
+    fieldsValue = Object.assign({}, fieldsValue, { picture })
+    axios({
+      method: 'post',
+      headers: { 'Content-type': 'application/json' },
+      url: 'http://localhost:3000/get/alterPersonalInfo',
+      data: fieldsValue
+    }).then(res => {
+      this.fetch()
+      this.context && this.context.handleLogin()
+      message.success("修改成功！")
+    })
   }
   render() {
+    let { loading, userId, nickname, picture, remarks, sex } = this.state;
+    const uploadButton = (
+      <div>
+        {loading ? <LoadingOutlined /> : <PlusOutlined />}
+        <div className="ant-upload-text">Upload</div>
+      </div>
+    );
     const formItemLayout = {
       labelCol: {
         xs: { span: 24 },
@@ -88,14 +132,15 @@ class AlterPersonalInfo extends React.Component {
         sm: { span: 19 },
       },
     }
-    let personalInfo = JSON.parse(window.localStorage.getItem("personalInfo"))
-    const { imageUrl = "/static/media/avatar_01.9bf849f7.jpg" } = this.state;
+
+
     return <div className="alter-personal-info">
       <Form name="time_related_controls"
         {...formItemLayout}
         onFinish={this.onFinish}
+        initialValues={{ userId, nickname, sex: sex || 'male', remarks, picture }}
       >
-        <Form.Item>
+        <Form.Item name="picture" style={{ marginLeft: 80 }}>
           <div className="head">
             <div className="avatar">
               <Upload
@@ -107,8 +152,7 @@ class AlterPersonalInfo extends React.Component {
                 beforeUpload={beforeUpload}
                 onChange={this.handleChange}
               >
-                {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> :
-                  <img src="https://c-ssl.duitang.com/uploads/item/201703/25/20170325222541_uaWZr.thumb.1000_0.jpeg" />}
+                {picture ? <img src={picture} alt="avatar" style={{ width: '100%' }} /> : uploadButton}
               </Upload>
             </div>
             <div>
@@ -117,19 +161,19 @@ class AlterPersonalInfo extends React.Component {
             </div>
           </div>
         </Form.Item>
-        <Form.Item label="姓名：">
-          <Input defaultValue="冷漠无情失智君" />
+        <Form.Item label="姓名：" name="nickname">
+          <Input />
         </Form.Item>
-        <Form.Item label="性别：">
+        <Form.Item label="性别：" name="sex">
           <Radio.Group>
             <Radio value={'male'}>男</Radio>
             <Radio value={'female'}>女</Radio>
           </Radio.Group>
         </Form.Item>
-        <Form.Item label="联系方式：">
+        <Form.Item label="联系方式：" name="userId">
           <Input />
         </Form.Item>
-        <Form.Item label="备注：">
+        <Form.Item label="备注：" name="remarks">
           <Input.TextArea />
         </Form.Item>
         <Form.Item
@@ -143,10 +187,11 @@ class AlterPersonalInfo extends React.Component {
           </Button>
         </Form.Item>
       </Form>
-    </div>
+    </div >
   }
 }
 class Mine extends React.Component {
+
   constructor() {
     super()
     this.state = {
@@ -158,17 +203,16 @@ class Mine extends React.Component {
   }
   render() {
     let { openKeys } = this.state;
-    let { userId } = this.props;
-    let personalInfo = JSON.parse(window.localStorage.getItem("personalInfo"))
-    let { nickname, jurisdiction,pic } = personalInfo
+    let { userId, userInfo } = this.props;
+    let { picture, nickname, jurisdiction } = userInfo
     return <div className="mine">
       <div className="personal-info">
         <div style={{ borderRight: "1px solid #f9f9f9" }}>
           <div className="info">
-            {pic ?<img src={pic} alt="" /> : <Avatar icon={<UserOutlined />} />}
+            {picture ? <img src={picture} alt="" /> : <Avatar icon={<UserOutlined />} />}
             <div style={{ marginLeft: 16 }}>
               <p>{nickname || ""}</p>
-              <span>{jurisdiction==1?"管理员":"普通用户"}</span>
+              <span>{jurisdiction == 1 ? "管理员" : "普通用户"}</span>
             </div>
           </div>
           <Menu openKeys={openKeys} style={{ width: 240 }} defaultSelectedKeys="a" onClick={this.handleClick}>
@@ -176,7 +220,7 @@ class Mine extends React.Component {
             <Menu.Item key="b"><span className={openKeys == "b" ? "click-style" : ""}>修改个人信息</span></Menu.Item>
           </Menu>
         </div>
-        {openKeys == "a" ? <MyRelease userId={userId} /> : openKeys == "b" ? <AlterPersonalInfo userId={userId} /> : null}
+        {openKeys == "a" ? <MyRelease userId={userId} /> : openKeys == "b" ? <AlterPersonalInfo userId={userId} userInfo={userInfo || {}} /> : null}
       </div>
     </div>
   }

@@ -21,11 +21,17 @@ router.post('/login', function (req, res, next) {
   })
 })
 
-
+router.get('/getPersonalInfo',function(req,res,next){
+  let userId = req.query.userId
+  db.dbConnect('select * from user where userId = ?',[userId],function(err,data){
+    console.log(data)
+    res.send(data[0])
+  })
+})
 router.get('/getReleaseData', function (req, res, next) {
   db.dbConnect('SELECT user.userId,nickname,picture,type,place,time,otherRemarks,contactMethod,releaseType,urgent FROM USER INNER JOIN releaseinfo ON user.userId = releaseinfo.userId', [], function (err, data) {
     db.dbConnect('SELECT * FROM picture', [], function (err1, data1) {
-      data.map(item => {
+      (data || []).map(item => {
         item.img = []
         data1.forEach(it => {
           if (item.userId == it.userId && it.time == item.time) {

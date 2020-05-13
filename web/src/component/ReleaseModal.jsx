@@ -39,6 +39,7 @@ export const ReleaseModal = ({ visible = false,againRelease=false, displayVisibl
 
 
     let onFormLayoutChange = (_, b) => {
+        console.log(b)
         var times = Date(moment());
         if (b.time) {
             times = Date.parse(b.time)

@@ -6,8 +6,10 @@ import Mine from './Mine'
 import './Home.less'
 import axios from 'axios'
 import moment from 'moment'
+import { HomeContext } from './HomeContext'
 
-const { Header, Footer, Content } = Layout;
+const { Header, Content } = Layout;
+
 
 class Home extends React.Component {
     constructor() {
@@ -23,10 +25,12 @@ class Home extends React.Component {
             time: undefined,
             displayTime: false,
             countDown: 60,
-            registerSuccess: false
+            registerSuccess: false,
+            userInfo:{}
         }
     }
     onFinish = values => {
+        console.log(values)
         this.setState({ iconLoading: true })
         axios({
             method: 'post',
@@ -35,14 +39,27 @@ class Home extends React.Component {
             data: values
         }).then(({ data }) => {
             let storage = window.localStorage;
-            storage.setItem("personalInfo", JSON.stringify(data))
+            storage.setItem("userId", data.userId)
             message.success("登录成功！")
-            this.setState({ visible: false, iconLoading: false, data: data || '' })
+            this.setState({ visible: false, iconLoading: false, data: data || '' },this.fetch)
         }).catch(function (error) {
             message.info("服务器错误！")
         });
 
     };
+    fetch = () => {
+        let userId = window.localStorage.getItem("userId")
+        axios({
+            method: 'get',
+            headers: { 'Content-type': 'application/json' },
+            url: 'http://localhost:3000/all/getPersonalInfo',
+            params: {userId}
+        }).then(({data}) => {
+            this.setState({userInfo:data})
+        }).catch(function (error) {
+            // message.info("服务器错误！")
+        });
+    }
     onFormLayoutChange = (_, b) => {
         this.setState({ registerData: b })
     }
@@ -111,7 +128,6 @@ class Home extends React.Component {
         return <Form
             {...layout}
             name="basic"
-            initialValues={{ remember: true }}
             initialValues={{}}
             onValuesChange={this.onFormLayoutChange}
         >
@@ -214,38 +230,39 @@ class Home extends React.Component {
         this.setState({ value })
     };
     render() {
-        let personalInfo = JSON.parse(window.localStorage.getItem("personalInfo"))
-        let { userId, nickname, pic } = personalInfo
-        let { value, visible, checkInterface } = this.state;
-        return <div className="Home">
-            <Layout>
-                <Header>
-                    <div className="left-header"><img src={require("../images/logo.jpeg")} alt="此图片无法显示" /></div>
-                    <div className="center-header">
-                        <Radio.Group defaultValue={value} onChange={this.handleChange}>
-                            <Radio.Button value="a">首页</Radio.Button>
-                            <Radio.Button value="d">我的</Radio.Button>
-                        </Radio.Group>
-                    </div>
-                    <div className="right-header">
-                        <Button type="link" onClick={() => this.setState({ visible: true })}>{nickname || '登录'}</Button>
-                        {pic ? <Avatar src={pic} /> : <Avatar icon={<UserOutlined />} />}
-                    </div>
-                </Header>
-                <Content>
-                    {value == "a" ? <Index userId={userId} /> : <Mine userId={userId} />}
-                </Content>
-            </Layout>
-            <Modal
-                title={checkInterface ? "登录" : "注册"}
-                visible={visible}
-                footer={null}
-                maskClosable={false}
-                onCancel={() => { this.setState({ visible: false }) }}
-            >
-                {this.Demo()}
-            </Modal>
-        </div>
+        let { value, visible, checkInterface,userInfo } = this.state;
+        let { userId, nickname, picture,phone } = userInfo
+        return <HomeContext.Provider value={{handleLogin:this.fetch}}>
+            <div className="Home">
+                <Layout>
+                    <Header>
+                        <div className="left-header"><img src={require("../images/logo.jpeg")} alt="此图片无法显示" /></div>
+                        <div className="center-header">
+                            <Radio.Group defaultValue={value} onChange={this.handleChange}>
+                                <Radio.Button value="a">首页</Radio.Button>
+                                <Radio.Button value="d">我的</Radio.Button>
+                            </Radio.Group>
+                        </div>
+                        <div className="right-header">
+                            <Button type="link" onClick={() => this.setState({ visible: true })}>{nickname || '登录'}</Button>
+                            {picture ? <Avatar src={picture} /> : <Avatar icon={<UserOutlined />} />}
+                        </div>
+                    </Header>
+                    <Content>
+                        {value == "a" ? <Index userId={userId} userInfo={userInfo} /> : <Mine userId={userId} userInfo={userInfo} />}
+                    </Content>
+                </Layout>
+                <Modal
+                    title={checkInterface ? "登录" : "注册"}
+                    visible={visible}
+                    footer={null}
+                    maskClosable={false}
+                    onCancel={() => { this.setState({ visible: false }) }}
+                >
+                    {this.Demo()}
+                </Modal>
+            </div>
+        </HomeContext.Provider>
     }
 }
 

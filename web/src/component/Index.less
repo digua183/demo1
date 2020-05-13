@@ -9,18 +9,41 @@
         padding:20px;
         width:380px;
         border-left:1px solid #e4e6eb;
-    }
-    .pick-up-item{
-        width:100%;
-        padding:20px;
+        .radio-switch:nth-child(2){
+            border:0px;
+        }
         .radio-switch{
-            padding:20px 20px;
+            padding-bottom:20px;
             border-bottom:1px solid #e4e6eb;
-            text-align:right;
+            .line{
+                margin:10px 0px;
+            }
+            .select{
+                margin-bottom:10px;
+                
+            }
+            .ant-picker,.ant-input{
+                font-size:12px;
+                height:28px; 
+                margin-bottom:10px;
+            }
+            .select-type{
+                background:#1890ff;
+                color:white;
+                border:0;
+            }
+            .ant-btn{
+                margin-right:10px;
+                font-size:12px;
+            }
             .ant-radio-button-wrapper{
                 padding:0px 6px;
             }
         }
+    }
+    .pick-up-item{
+        width:100%;
+        padding:20px;
     }
 }
 
