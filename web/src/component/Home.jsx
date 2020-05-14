@@ -26,7 +26,8 @@ class Home extends React.Component {
             displayTime: false,
             countDown: 60,
             registerSuccess: false,
-            userInfo:{}
+            userInfo:{},
+            isLoginStatus:false
         }
     }
     onFinish = values => {
@@ -41,12 +42,18 @@ class Home extends React.Component {
             let storage = window.localStorage;
             storage.setItem("userId", data.userId)
             message.success("登录成功！")
-            this.setState({ visible: false, iconLoading: false, data: data || '' },this.fetch)
+            this.setState({ visible: false, iconLoading: false, data: data || '',isLoginStatus:true },this.fetch)
         }).catch(function (error) {
             message.info("服务器错误！")
         });
 
     };
+    componentDidMount(){
+        let userId = window.localStorage.getItem("userId")
+        if(userId){
+            this.fetch()
+        }
+    }
     fetch = () => {
         let userId = window.localStorage.getItem("userId")
         axios({
@@ -55,7 +62,7 @@ class Home extends React.Component {
             url: 'http://localhost:3000/all/getPersonalInfo',
             params: {userId}
         }).then(({data}) => {
-            this.setState({userInfo:data})
+            this.setState({userInfo:data,isLoginStatus:true})
         }).catch(function (error) {
             // message.info("服务器错误！")
         });
@@ -230,7 +237,7 @@ class Home extends React.Component {
         this.setState({ value })
     };
     render() {
-        let { value, visible, checkInterface,userInfo } = this.state;
+        let { value, visible, checkInterface,userInfo,isLoginStatus } = this.state;
         let { userId, nickname, picture,phone } = userInfo
         return <HomeContext.Provider value={{handleLogin:this.fetch}}>
             <div className="Home">
@@ -249,7 +256,7 @@ class Home extends React.Component {
                         </div>
                     </Header>
                     <Content>
-                        {value == "a" ? <Index userId={userId} userInfo={userInfo} /> : <Mine userId={userId} userInfo={userInfo} />}
+                        {value == "a" ? <Index isLoginStatus={isLoginStatus} userId={userId} userInfo={userInfo} /> : <Mine userId={userId} userInfo={userInfo} />}
                     </Content>
                 </Layout>
                 <Modal

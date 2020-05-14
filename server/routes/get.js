@@ -56,14 +56,15 @@ router.get('/deleteData', function (req, res, next) {
 
 router.get('/getPersonalReleaseInfo', function (req, res, next) {
     let userId = req.query.userId
+    console.log(userId)
     new Promise(function (resolve, reject) {
-        db.dbConnect('SELECT user.userId,nickname,picture,type,place,time,otherRemarks,contactMethod,releaseType,urgent FROM USER INNER JOIN releaseinfo ON user.userId = releaseinfo.userId AND user.userId = ?', [userId], function (err, data) {
+        db.dbConnect('SELECT user.userId,nickname,picture,place,time,otherRemarks,contactMethod,releaseType,urgent FROM USER INNER JOIN releaseinfo ON user.userId = releaseinfo.userId AND user.userId = ?', [userId], function (err, data) {
             resolve(data)
         })
     })
         .then(function (data) {
             db.dbConnect('select * from picture where userId = ?', [userId], function (err, data2) {
-                data.map(item => {
+                (data || []).map(item => {
                     item.img = []
                     data2.map(it => {
                         if (item.time == it.time) {

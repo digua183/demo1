@@ -18,7 +18,7 @@ const RELEASETYPE = { "失物招领": 1, "拾物招领": 2, "全部": 3 }
 
 
 function IndexItem({ data, fetch, userInfo, isPersonal = false, ...props }) {
-    let { userId, time, picture, nickname, urgent, releaseType, otherRemarks, img } = data;
+    let { userId, time, picture, place, nickname, contactMethod, urgent, releaseType, otherRemarks, img } = data;
     let { jurisdiction } = userInfo
     let isAdmin = jurisdiction == 1
     const [visible, setVisible] = useState(false)
@@ -50,7 +50,9 @@ function IndexItem({ data, fetch, userInfo, isPersonal = false, ...props }) {
                 {releaseType == "1" ? <Tag color="#2db7f5">失物招领</Tag> : <Tag color="#2db7f5">拾物招领</Tag>}
             </div>
             <div className="content">
-                <p>{otherRemarks || '-'}</p>
+                <p>{releaseType == "1" ? `失物地点：` : "拾物地点："}{place || "-"}</p>
+                <p>联系电话：{contactMethod || "-"}</p>
+                <p>物品简介：{otherRemarks || '-'}</p>
             </div>
             <div className="images">
                 {img ? img.map(item => <img key={item.name} src={item.url} alt="此图片无法显示" />) : null}
@@ -90,7 +92,8 @@ class Index extends React.Component {
             data: [],
             selectType: '全部',
             time: '',
-            place: ''
+            place: '',
+            data1: []
         }
     }
     componentDidMount() {
@@ -106,7 +109,7 @@ class Index extends React.Component {
             data = data.sort((a, b) => {
                 return Number(b.time) - Number(a.time)
             })
-            this.setState({ data: data || [] })
+            this.setState({ data: data || [], data1: data || [] })
         }).catch(() => {
             message.info("服务器错误！")
         })
@@ -145,20 +148,34 @@ class Index extends React.Component {
         this.setState({ selectType: it }, this.handleFilter)
     }
     handleFilter = () => {
-        let { selectType, time, place, data } = this.state;
+        let { selectType, time, place, data, data1 } = this.state;
         console.log(selectType, time, place, data)
-        data = data.filter(it => {
+        data = data1.filter(it => {
             if (selectType == "全部") {
                 return it
             } else if (it.releaseType == RELEASETYPE[selectType]) {
                 return it
             }
         })
+        if (time) {
+            data = data1.filter(it => {
+                if (it.time >= time) {
+                    return it
+                }
+            })
+        }
+        if (place) {
+            data = data1.filter(it => {
+                if (it.place.indexOf(place) > -1) {
+                    return it
+                }
+            })
+        }
         this.setState({ data })
     }
     render() {
         let { visible, confirmLoading, data, selectType } = this.state;
-        let { userInfo } = this.props;
+        let { userInfo,isLoginStatus } = this.props;
         return <div className="index">
             <div className="pick-up-item">
                 {data.length > 0 ? data.map((it, idx) => {
@@ -168,7 +185,7 @@ class Index extends React.Component {
             <div className="right-part">
                 <div className="radio-switch">
                     <div className="line">发布：</div>
-                    <Button size="small" type="primary" style={{ marginRight: 20 }} onClick={() => { this.setState({ visible: true }) }}>发布招领</Button>
+                    <Button size="small" type="primary" style={{ marginRight: 20 }} onClick={() => { isLoginStatus&&this.setState({ visible: true }) }}>发布招领</Button>
                 </div>
                 <div className="radio-switch">
                     <div className="line">筛选：</div>

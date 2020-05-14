@@ -8,35 +8,28 @@ import {
     Select,
     DatePicker,
     Upload,
-    Divider,
     AutoComplete,
-    Checkbox,
-    message
+    Checkbox
 } from 'antd'
 import { PlusOutlined } from '@ant-design/icons';
 import moment from 'moment'
-import axios from 'axios'
+import './ReleaseModal.less'
 
 const { Option } = Select;
+const FORMSTYLE = {marginBottom:"10px"}
 
 
 export const ReleaseModal = ({ visible = false,againRelease=false, displayVisible, confirmLoading = false, submitRelease, data = {}, ...props }) => {
     const [releaseType, setReleaseType] = useState((data.releaseType && data.releaseType == 2) ? "拾物" : "失物" || '失物')
     const [urgent, setUrgent] = useState(data.urgent || false)
     const [dataSource, setdataSource] = useState([])
-    const [items, setItems] = useState(['手机', '衣物', '钱包'])
     const [fileList, setFileList] = useState(data.img&&data.img.map(it=>{
         return {name:it.name,status:it.status,uid:it.uid,url:it.url}
     })  ||[])
     const [previewVisible, setPreviewVisible] = useState(false)
     const [previewImage, setPreviewImage] = useState('')
-    const [name, setName] = useState('')
     const [releaseData, setReleaseData] = useState({})
     const formRef = useContext({})
-
-    let index = 0;
-    
-
 
     let onFormLayoutChange = (_, b) => {
         console.log(b)
@@ -87,7 +80,7 @@ export const ReleaseModal = ({ visible = false,againRelease=false, displayVisibl
             </Option>
         ));
         return <div className="content">
-            <Radio.Group defaultValue={releaseType} style={{ marginBottom: 30 }} onChange={({ target: { value } }) => {
+            <Radio.Group defaultValue={releaseType} style={{ marginBottom: 10 }} onChange={({ target: { value } }) => {
                 setReleaseType(value)
             }}>
                 <Radio value="失物">失物招领</Radio>
@@ -100,57 +93,27 @@ export const ReleaseModal = ({ visible = false,againRelease=false, displayVisibl
                     wrapperCol={{ span: 14 }}
                     layout="horizontal"
                     initialValues={data.userId ?
-                        {type:data.type,fileList: data.img, place: data.place, time: moment(Number(data.time)), otherRemarks: data.otherRemarks, contactMethod: data.contactMethod } :
+                        {fileList: data.img, place: data.place, time: moment(Number(data.time)), otherRemarks: data.otherRemarks, contactMethod: data.contactMethod } :
                         { fileList: [], place: "三区操场", time: moment(), otherRemarks: `本人于${moment().format("MM月DD日hh点mm分")}在三区操场捡到某物若干，请失主联系我，联系电话：xxxxxxx` }}
                     onValuesChange={onFormLayoutChange}
                 >
-                    <Form.Item label="物品类型：" name="type">
-                        <Select
-                            style={{ width: 160 }}
-                            placeholder="请选择类型"
-                            dropdownRender={menu => (
-                                <div>
-                                    {menu}
-                                    <Divider style={{ margin: '4px 0' }} />
-                                    <div style={{ display: 'flex', flexWrap: 'nowrap', padding: 8 }}>
-                                        <Input style={{ flex: 'auto' }} value={name} onChange={({ target: { value } }) => {
-                                            setName(value)
-                                        }} />
-                                        <a
-                                            style={{ flex: 'none', padding: '8px', display: 'block', cursor: 'pointer' }}
-                                            onClick={() => {
-                                                setName('')
-                                                setItems([...[...items, name || `New item ${index++}`]])
-                                            }}
-                                        >
-                                            <PlusOutlined /> 添加
-                                        </a>
-                                    </div>
-                                </div>
-                            )}
-                        >
-                            {items.map(item => (
-                                <Option key={item}>{item}</Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-                    <Form.Item label="紧急程度：" name="urgent">
+                    <Form.Item label="紧急程度：" name="urgent" style={{...FORMSTYLE}}>
                         <Checkbox onChange={({ target: { checked } }) => {
                             setUrgent(checked)
                         }} checked={urgent}>紧急</Checkbox>
                     </Form.Item>
-                    <Form.Item label="联系电话/微信/QQ：" name="contactMethod">
-                        <Input style={{ width: 200 }} />
+                    <Form.Item   style={{...FORMSTYLE}}  label="联系方式：" name="contactMethod" rules={[{ required: true, message: '请输入你的联系方式！' }]}>
+                        <Input placeholder="联系电话/微信/QQ：" style={{ width: 200 }}  />
                     </Form.Item>
-                    <Form.Item label={releaseType + "地点："} name="place">
+                    <Form.Item   style={{...FORMSTYLE}} label={releaseType + "地点："} name="place" rules={[{ required: true, message: '请输入地址！' }]}>
                         <AutoComplete style={{ width: 200 }} placeholder={`请选择${releaseType}地点`}>
                             {children}
                         </AutoComplete>
                     </Form.Item>
-                    <Form.Item label={releaseType + "时间："} name="time">
+                    <Form.Item   style={{...FORMSTYLE}} label={releaseType + "时间："} name="time" rules={[{ required: true, message: '请输入时间！' }]}>
                         <DatePicker showTime placeholder="请选择时间" />
                     </Form.Item>
-                    <Form.Item label="正文：" name="otherRemarks">
+                    <Form.Item   style={{...FORMSTYLE}} label="物品简介：" name="otherRemarks" rules={[{ required: true, message: '请输入物品简介！' }]}>
                         <Input.TextArea
                             autoSize={{ minRows: 4, maxRows: 6 }}
                         />
@@ -160,7 +123,7 @@ export const ReleaseModal = ({ visible = false,againRelease=false, displayVisibl
                             "尽量写清楚失物地点,时间，物品名称，数量等"
                         }
                     </div>
-                    <Form.Item label="上传图片" name="uploadPicture">
+                    <Form.Item   style={{...FORMSTYLE}} label="上传图片" name="uploadPicture">
                         <div className="clearfix">
                             <Upload
                                 action="https://www.mocky.io/v2/5cc8019d300000980a055e76"

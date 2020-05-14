@@ -35,21 +35,21 @@ class MyRelease extends React.Component {
     this.fetch()
   }
   fetch = () => {
-    let { userId } = this.props;
+    let { userInfo } = this.props;
     axios({
       method: 'get',
       headers: { 'Content-type': 'application/json' },
       url: 'http://localhost:3000/get/getPersonalReleaseInfo',
-      params: { userId }
+      params: { userId:userInfo.userId }
     }).then(res => {
       this.setState({ data: res.data || {} })
     })
   }
   render() {
     let { data } = this.state;
-    console.log(data)
+    let { userInfo } = this.props;
     return <div style={{ width: "100%" }}>
-      {data.length > 0 ? data.map((it, idx) => <IndexItem data={it} key={idx} fetch={this.fetch} isPersonal={true} />) :
+      {data.length > 0 ? data.map((it, idx) => <IndexItem userInfo={userInfo} data={it} key={idx} fetch={this.fetch} isPersonal={true} />) :
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
     </div>
   }
@@ -195,7 +195,7 @@ class Mine extends React.Component {
   constructor() {
     super()
     this.state = {
-      openKeys: 'b'
+      openKeys: 'a'
     }
   }
   handleClick = ({ key }) => {
@@ -220,7 +220,7 @@ class Mine extends React.Component {
             <Menu.Item key="b"><span className={openKeys == "b" ? "click-style" : ""}>修改个人信息</span></Menu.Item>
           </Menu>
         </div>
-        {openKeys == "a" ? <MyRelease userId={userId} /> : openKeys == "b" ? <AlterPersonalInfo userId={userId} userInfo={userInfo || {}} /> : null}
+        {openKeys == "a" ? <MyRelease userId={userId} userInfo={userInfo} /> : openKeys == "b" ? <AlterPersonalInfo userId={userId} userInfo={userInfo || {}} /> : null}
       </div>
     </div>
   }

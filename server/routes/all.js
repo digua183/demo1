@@ -29,7 +29,7 @@ router.get('/getPersonalInfo',function(req,res,next){
   })
 })
 router.get('/getReleaseData', function (req, res, next) {
-  db.dbConnect('SELECT user.userId,nickname,picture,type,place,time,otherRemarks,contactMethod,releaseType,urgent FROM USER INNER JOIN releaseinfo ON user.userId = releaseinfo.userId', [], function (err, data) {
+  db.dbConnect('SELECT user.userId,nickname,picture,place,time,otherRemarks,contactMethod,releaseType,urgent FROM USER INNER JOIN releaseinfo ON user.userId = releaseinfo.userId', [], function (err, data) {
     db.dbConnect('SELECT * FROM picture', [], function (err1, data1) {
       (data || []).map(item => {
         item.img = []
@@ -37,8 +37,9 @@ router.get('/getReleaseData', function (req, res, next) {
           if (item.userId == it.userId && it.time == item.time) {
              item.img.push(it)
           }
-          return item
+          
         })
+        return item
       })
       res.send(data)
     })
@@ -46,11 +47,11 @@ router.get('/getReleaseData', function (req, res, next) {
 })
 
 router.post('/upload', function (req, res, next) {
-  let { userId, time, type, otherRemarks, place, contactMethod, fileList, releaseType, urgent } = req.body;
+  let { userId, time, otherRemarks, place, contactMethod, fileList, releaseType, urgent } = req.body;
   if (userId) {
     releaseType = releaseType == "失物" ? 1 : 2
-    const sqlarr = [userId, type, place, time, otherRemarks, contactMethod, releaseType, urgent]
-    const sql = 'insert into releaseinfo (userId, type, place, time, otherRemarks, contactMethod, releaseType,urgent) values(?,?,?,?,?,?,?,?)';
+    const sqlarr = [userId, place, time, otherRemarks, contactMethod, releaseType, urgent]
+    const sql = 'insert into releaseinfo (userId,  place, time, otherRemarks, contactMethod, releaseType,urgent) values(?,?,?,?,?,?,?)';
     db.dbConnect(sql, sqlarr, function (err, data) {
     })
     console.log(fileList)
