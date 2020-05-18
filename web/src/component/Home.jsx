@@ -243,7 +243,7 @@ class Home extends React.Component {
             <div className="Home">
                 <Layout>
                     <Header>
-                        <div className="left-header"><img src={require("../images/logo.jpeg")} alt="此图片无法显示" /></div>
+                        <div className="left-header"></div>
                         <div className="center-header">
                             <Radio.Group defaultValue={value} onChange={this.handleChange}>
                                 <Radio.Button value="a">首页</Radio.Button>
